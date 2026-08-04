@@ -1,6 +1,6 @@
 {
-  "published": [],
-  "blocked": [
+  "published": [
     "4.14.1"
-  ]
+  ],
+  "blocked": []
 }
