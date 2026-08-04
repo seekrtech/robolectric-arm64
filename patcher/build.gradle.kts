@@ -16,3 +16,14 @@ dependencies {
     testImplementation("org.robolectric:utils-reflector:4.14.1")
     testImplementation("com.google.guava:guava:33.3.1-jre")
 }
+
+tasks.register<JavaExec>("runPatchLoader") {
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.seekrtech.robolectricarm64.PatchLoader")
+}
+
+tasks.register("printRuntimeClasspath") {
+    doLast {
+        println(sourceSets["main"].runtimeClasspath.asPath)
+    }
+}
