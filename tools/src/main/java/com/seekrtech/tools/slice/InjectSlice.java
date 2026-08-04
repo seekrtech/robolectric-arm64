@@ -22,6 +22,14 @@ public final class InjectSlice {
 
   private InjectSlice() {}
 
+  public static void main(String[] args) throws IOException {
+    if (args.length != 3) {
+      System.err.println("usage: InjectSlice <in.jar> <slice.so> <out.jar>");
+      System.exit(1);
+    }
+    inject(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]));
+  }
+
   public static void inject(Path inputJar, Path sliceFile, Path outputJar) throws IOException {
     byte[] sliceBytes = Files.readAllBytes(sliceFile);
     Path dir = outputJar.toAbsolutePath().getParent();

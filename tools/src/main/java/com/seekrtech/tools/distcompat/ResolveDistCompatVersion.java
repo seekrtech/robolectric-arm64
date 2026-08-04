@@ -3,6 +3,8 @@ package com.seekrtech.tools.distcompat;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,6 +25,24 @@ public final class ResolveDistCompatVersion {
   private static final String ARTIFACT_ID = "nativeruntime-dist-compat";
 
   private ResolveDistCompatVersion() {}
+
+  public static void main(String[] args) {
+    if (args.length == 2 && "--pom-url".equals(args[0])) {
+      System.out.println(pomUrl(args[1]));
+      return;
+    }
+    if (args.length == 1) {
+      try {
+        System.out.println(fromPomXml(Files.readString(Path.of(args[0]))));
+        return;
+      } catch (IOException e) {
+        System.err.println("cannot read POM: " + e.getMessage());
+        System.exit(1);
+      }
+    }
+    System.err.println("usage: ResolveDistCompatVersion <pom.xml> | --pom-url <robolectricVersion>");
+    System.exit(2);
+  }
 
   /** Extracts the dist-compat version from a nativeruntime POM; fails loudly if absent. */
   public static String fromPomXml(String pomXml) {

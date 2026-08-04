@@ -27,6 +27,46 @@ public final class Registry {
 
   private Registry() {}
 
+  public static void main(String[] args) {
+    if (args.length < 2) {
+      System.err.println(
+          "usage: Registry <file.json> is-published|is-blocked|record-published|record-blocked <version>"
+              + " | Registry <file.json> print");
+      System.exit(2);
+    }
+    Path file = Path.of(args[0]);
+    String command = args[1];
+    try {
+      Registry registry = load(file);
+      switch (command) {
+        case "print":
+          System.out.println("published: " + registry.published());
+          System.out.println("blocked: " + registry.blocked());
+          return;
+        case "is-published":
+          System.exit(registry.isPublished(args[2]) ? 0 : 1);
+          return;
+        case "is-blocked":
+          System.exit(registry.isBlocked(args[2]) ? 0 : 1);
+          return;
+        case "record-published":
+          registry.recordPublished(args[2]);
+          registry.save(file);
+          return;
+        case "record-blocked":
+          registry.recordBlocked(args[2]);
+          registry.save(file);
+          return;
+        default:
+          System.err.println("unknown command: " + command);
+          System.exit(2);
+      }
+    } catch (IOException | RuntimeException e) {
+      System.err.println("registry error: " + e.getMessage());
+      System.exit(1);
+    }
+  }
+
   public static Registry empty() {
     return new Registry();
   }
