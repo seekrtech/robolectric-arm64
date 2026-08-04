@@ -3,8 +3,10 @@ package com.seekrtech.robolectricarm64;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -42,6 +44,25 @@ public final class PatchLoader {
 
   /** Copies {@code inJar} to {@code outJar}, rewriting the target class in place. */
   public static void patch(Path inJar, Path outJar) throws IOException {
+    // Write to a sibling temp file first so a partial failure never corrupts
+    // an existing output jar consumed by CI.
+    Path dir = outJar.toAbsolutePath().getParent();
+    Path tmp = Files.createTempFile(dir, outJar.getFileName().toString(), ".tmp");
+    try {
+      writePatched(inJar, tmp);
+      try {
+        Files.move(
+            tmp, outJar, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(tmp, outJar, StandardCopyOption.REPLACE_EXISTING);
+      }
+    } catch (IOException | RuntimeException e) {
+      Files.deleteIfExists(tmp);
+      throw e;
+    }
+  }
+
+  private static void writePatched(Path inJar, Path outJar) throws IOException {
     try (ZipFile zin = new ZipFile(inJar.toFile());
         JarOutputStream jout = new JarOutputStream(Files.newOutputStream(outJar))) {
       Enumeration<? extends ZipEntry> entries = zin.entries();
