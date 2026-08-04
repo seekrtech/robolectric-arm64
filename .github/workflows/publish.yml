@@ -45,16 +45,19 @@ jobs:
       - name: Record blocked and open issue
         if: failure() && steps.pipeline.outcome == 'failure'
         run: |
-          CP="$(./scripts/classpath.sh)"
-          if java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json is-blocked "$VERSION"; then
+          # The issue is the loud signal and must never be skipped by a git/classpath failure.
+          CP="$(./scripts/classpath.sh 2>/dev/null || true)"
+          if [[ -n "$CP" ]] && java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json is-blocked "$VERSION"; then
             echo "already blocked: $VERSION"
             exit 0
           fi
-          java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json record-blocked "$VERSION"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add published-versions.json
-          git diff --cached --quiet || { git commit -m "registry: block $VERSION"; git push; }
+          if [[ -n "$CP" ]]; then
+            java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json record-blocked "$VERSION"
+          fi
+          git config user.name "github-actions[bot]" || true
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com" || true
+          git add published-versions.json || true
+          git diff --cached --quiet || { git commit -m "registry: block $VERSION" || true; git push || true; }
           gh issue create \
             --title "publish failed for robolectric $VERSION" \
-            --body "The publish pipeline failed for robolectric $VERSION. See run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. The version is recorded as blocked and will not be retried automatically."
+            --body "The publish pipeline failed for robolectric $VERSION. See run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. The version will not be retried automatically."

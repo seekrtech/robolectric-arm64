@@ -21,10 +21,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Fetch upstream releases
+        run: ./scripts/fetch-releases.sh releases.json
+
       - name: Resolve next candidate
         id: candidate
         run: |
-          if VERSION="$(./scripts/next-candidate.sh)"; then
+          if VERSION="$(./scripts/next-candidate.sh releases.json published-versions.json)"; then
             echo "candidate=$VERSION" >> "$GITHUB_OUTPUT"
           else
             echo "no candidate"
