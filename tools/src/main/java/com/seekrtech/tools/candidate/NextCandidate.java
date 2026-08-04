@@ -18,7 +18,9 @@ import java.util.regex.Pattern;
 public final class NextCandidate {
 
   private static final Gson GSON = new Gson();
-  private static final Pattern STABLE_TAG = Pattern.compile("\\d+\\.\\d+\\.\\d+");
+  // Stable tags: 2-segment milestones (robolectric-4.16) and 3-segment patches (robolectric-4.16.1)
+  // are both real Maven artifacts; anything with a suffix is a beta/snapshot.
+  private static final Pattern STABLE_TAG = Pattern.compile("\\d+\\.\\d+(\\.\\d+)?");
 
   /** One entry of the GitHub releases API; unknown JSON fields are ignored. */
   public record Release(
@@ -75,7 +77,12 @@ public final class NextCandidate {
     if (tag == null) {
       return null;
     }
-    String stripped = tag.startsWith("v") ? tag.substring(1) : tag;
+    String stripped = tag;
+    if (stripped.startsWith("robolectric-")) {
+      stripped = stripped.substring("robolectric-".length());
+    } else if (stripped.startsWith("v")) {
+      stripped = stripped.substring(1);
+    }
     return STABLE_TAG.matcher(stripped).matches() ? stripped : null;
   }
 

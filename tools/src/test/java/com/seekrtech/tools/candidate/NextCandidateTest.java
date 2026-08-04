@@ -93,6 +93,34 @@ class NextCandidateTest {
     assertEquals("4.14.1", NextCandidate.next(List.of(rel("v4.14.1", false, false)), registry));
   }
 
+  @Test
+  void next_acceptsRobolectricPrefixedTags() {
+    // Real upstream tags are robolectric-<version>.
+    Registry registry = Registry.empty();
+    assertEquals(
+        "4.14.1",
+        NextCandidate.next(List.of(rel("robolectric-4.14.1", false, false)), registry));
+  }
+
+  @Test
+  void next_acceptsTwoSegmentStableTags() {
+    // Milestone tags like robolectric-4.16 are real Maven artifacts (no patch segment).
+    Registry registry = Registry.empty();
+    assertEquals(
+        "4.16",
+        NextCandidate.next(List.of(rel("robolectric-4.16", false, false)), registry));
+  }
+
+  @Test
+  void next_picksPatchOverMilestoneTag() {
+    Registry registry = Registry.empty();
+    assertEquals(
+        "4.16.1",
+        NextCandidate.next(
+            List.of(rel("robolectric-4.16", false, false), rel("robolectric-4.16.1", false, false)),
+            registry));
+  }
+
   @TempDir Path tempDir;
 
   private final ByteArrayOutputStream out = new ByteArrayOutputStream();
