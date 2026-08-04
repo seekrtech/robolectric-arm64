@@ -1,0 +1,37 @@
+name: watch
+
+on:
+  schedule:
+    # Daily 04:17 UTC; candidate selection is cheap, publish runs on the arm64 runner on demand.
+    - cron: "17 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write # dispatch publish.yml
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Resolve next candidate
+        id: candidate
+        run: |
+          if VERSION="$(./scripts/next-candidate.sh)"; then
+            echo "candidate=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "no candidate"
+          fi
+
+      - name: Dispatch publish
+        if: steps.candidate.outputs.candidate != ''
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.candidate }}
+        run: gh workflow run publish.yml -f robolectric_version="$CANDIDATE"

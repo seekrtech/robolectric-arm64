@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # Custom arm64 build runner (jose) used by publish.yml.
+  labels:
+    - jose
