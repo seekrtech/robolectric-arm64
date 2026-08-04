@@ -30,6 +30,8 @@ jobs:
           distribution: temurin
           java-version: 17
 
+
+
       - name: Run publish pipeline
         id: pipeline
         run: ./scripts/publish-pipeline.sh "$VERSION"
