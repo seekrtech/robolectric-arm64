@@ -34,6 +34,7 @@ tasks.register<JavaExec>("runNextCandidate") {
 }
 
 tasks.register("printRuntimeClasspath") {
+    dependsOn("classes")
     doLast {
         println(sourceSets["main"].runtimeClasspath.asPath)
     }

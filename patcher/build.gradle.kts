@@ -23,6 +23,7 @@ tasks.register<JavaExec>("runPatchLoader") {
 }
 
 tasks.register("printRuntimeClasspath") {
+    dependsOn("classes")
     doLast {
         println(sourceSets["main"].runtimeClasspath.asPath)
     }

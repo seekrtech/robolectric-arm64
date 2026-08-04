@@ -52,7 +52,7 @@ jobs:
             exit 0
           fi
           if [[ -n "$CP" ]]; then
-            java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json record-blocked "$VERSION"
+            java -cp "$CP" com.seekrtech.tools.registry.Registry published-versions.json record-blocked "$VERSION" || true
           fi
           git config user.name "github-actions[bot]" || true
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com" || true
