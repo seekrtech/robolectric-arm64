@@ -34,6 +34,9 @@ jobs:
 
       - name: Run publish pipeline
         id: pipeline
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: ./scripts/publish-pipeline.sh "$VERSION"
 
       - name: Commit registry
