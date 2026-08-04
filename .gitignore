@@ -1,0 +1,6 @@
+PLAN.md
+.gradle/
+build/
+*.iml
+.idea/
+.kotlin/
