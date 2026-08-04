@@ -73,6 +73,24 @@ class RegistryTest {
   }
 
   @Test
+  void load_partialJson_missingListsTreatAsEmpty() throws Exception {
+    Path file = tempDir.resolve("published-versions.json");
+    Files.writeString(file, "{\"published\": [\"4.14.1\"]}");
+    Registry registry = Registry.load(file);
+    assertTrue(registry.isPublished("4.14.1"));
+    assertTrue(registry.blocked().isEmpty());
+  }
+
+  @Test
+  void load_emptyJsonObject_returnsEmptyRegistry() throws Exception {
+    Path file = tempDir.resolve("published-versions.json");
+    Files.writeString(file, "{}");
+    Registry registry = Registry.load(file);
+    assertTrue(registry.published().isEmpty());
+    assertTrue(registry.blocked().isEmpty());
+  }
+
+  @Test
   void save_overwritesExistingFile() throws Exception {
     Path file = tempDir.resolve("published-versions.json");
     Registry first = Registry.empty();
