@@ -71,13 +71,22 @@ echo "injecting arm64 slice into conscrypt"
 java -cp "$CP" com.seekrtech.tools.slice.InjectSlice "$WORK/conscrypt.jar" "$CONSCRYPT_SLICE" "$WORK/conscrypt-arm64.jar" "$CONSCRYPT_ENTRY"
 
 echo "publishing to GitHub Packages"
-./gradlew :publish:publishAllPublicationsToGitHubPackagesRepository \
+# GitHub Packages is immutable: re-publishing an existing version returns 409, which is
+# fine (content is identical). Any other failure aborts the pipeline.
+if ! ./gradlew :publish:publishAllPublicationsToGitHubPackagesRepository \
   -PpatchedJar="$WORK/patched.jar" \
   -PinjectedJar="$WORK/dist-compat-arm64.jar" \
   -PnativeruntimeVersion="$VERSION" \
   -PdistCompatVersion="$DIST_COMPAT_VERSION" \
   -PconscryptJar="$WORK/conscrypt-arm64.jar" \
-  -PconscryptVersion="$CONSCRYPT_VERSION"
+  -PconscryptVersion="$CONSCRYPT_VERSION" >"$WORK/publish.log" 2>&1; then
+  if grep -q "409" "$WORK/publish.log"; then
+    echo "warning: publish returned 409 (version already exists); treating as published"
+  else
+    cat "$WORK/publish.log" >&2
+    exit 1
+  fi
+fi
 
 echo "recording published version"
 java -cp "$CP" com.seekrtech.tools.registry.Registry "$REGISTRY" record-published "$VERSION"
