@@ -5,16 +5,18 @@ plugins {
 }
 
 /**
- * Publishes the two patched artifacts to GitHub Packages.
+ * Publishes the patched artifacts to GitHub Packages.
  *
  * Coordinates (group com.seekrtech):
  *  - robolectric-nativeruntime-arm64:<nativeruntimeVersion>          artifact: patched nativeruntime jar
  *  - robolectric-nativeruntime-dist-compat-arm64:<distCompatVersion> artifact: dist-compat jar with injected slice
+ *  - conscrypt-openjdk-uber-arm64:<conscryptVersion>                 artifact: conscrypt uber jar with injected arm64 slice
  *
  * Invoked from the publish workflow with:
  *  ./gradlew :publish:publishAllPublicationsToGitHubPackagesRepository \
  *      -PpatchedJar=<path> -PinjectedJar=<path> \
- *      -PnativeruntimeVersion=<v> -PdistCompatVersion=<v>
+ *      -PnativeruntimeVersion=<v> -PdistCompatVersion=<v> \
+ *      -PconscryptJar=<path> -PconscryptVersion=<v>
  *
  * Auth comes from GITHUB_ACTOR/GITHUB_TOKEN (workflow permissions: packages: write).
  *
@@ -27,6 +29,8 @@ val patchedJar = providers.gradleProperty("patchedJar")
 val injectedJar = providers.gradleProperty("injectedJar")
 val nativeruntimeVersion = providers.gradleProperty("nativeruntimeVersion")
 val distCompatVersion = providers.gradleProperty("distCompatVersion")
+val conscryptJar = providers.gradleProperty("conscryptJar")
+val conscryptVersion = providers.gradleProperty("conscryptVersion")
 val publishUsername = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR").orEmpty()
 val publishPassword = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN").orEmpty()
 
@@ -35,6 +39,8 @@ val patchedJarFile = File(patchedJar.orNull ?: "MISSING-patchedJar")
 val injectedJarFile = File(injectedJar.orNull ?: "MISSING-injectedJar")
 val nativeruntimeVersionValue = nativeruntimeVersion.orNull ?: "MISSING-nativeruntimeVersion"
 val distCompatVersionValue = distCompatVersion.orNull ?: "MISSING-distCompatVersion"
+val conscryptJarFile = File(conscryptJar.orNull ?: "MISSING-conscryptJar")
+val conscryptVersionValue = conscryptVersion.orNull ?: "MISSING-conscryptVersion"
 
 tasks.withType<AbstractPublishToMaven>().configureEach {
     doFirst {
@@ -45,6 +51,10 @@ tasks.withType<AbstractPublishToMaven>().configureEach {
         }
         require(distCompatVersion.isPresent) {
             "required: -PdistCompatVersion=<dist-compat version from upstream POM>"
+        }
+        require(conscryptJar.isPresent) { "required: -PconscryptJar=<path to slice-injected conscrypt jar>" }
+        require(conscryptVersion.isPresent) {
+            "required: -PconscryptVersion=<conscrypt version from upstream POM>"
         }
         require(publishUsername.isNotEmpty()) {
             "missing publish credentials: set GITHUB_ACTOR/GITHUB_TOKEN"
@@ -93,6 +103,15 @@ publishing {
             pom {
                 name.set("robolectric-nativeruntime-dist-compat-arm64")
                 description.set("Robolectric nativeruntime-dist-compat with arm64 native slice")
+            }
+        }
+        create<MavenPublication>("conscryptUberArm64") {
+            artifact(conscryptJarFile)
+            artifactId = "conscrypt-openjdk-uber-arm64"
+            version = conscryptVersionValue
+            pom {
+                name.set("conscrypt-openjdk-uber-arm64")
+                description.set("Conscrypt openjdk-uber with arm64 native slice")
             }
         }
     }

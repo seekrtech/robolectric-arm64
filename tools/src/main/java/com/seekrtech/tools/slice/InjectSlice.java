@@ -23,19 +23,25 @@ public final class InjectSlice {
   private InjectSlice() {}
 
   public static void main(String[] args) throws IOException {
-    if (args.length != 3) {
-      System.err.println("usage: InjectSlice <in.jar> <slice.so> <out.jar>");
+    if (args.length != 3 && args.length != 4) {
+      System.err.println("usage: InjectSlice <in.jar> <slice.so> <out.jar> [entry]");
       System.exit(1);
     }
-    inject(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]));
+    String entry = args.length == 4 ? args[3] : SLICE_ENTRY;
+    inject(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]), entry);
   }
 
   public static void inject(Path inputJar, Path sliceFile, Path outputJar) throws IOException {
+    inject(inputJar, sliceFile, outputJar, SLICE_ENTRY);
+  }
+
+  public static void inject(Path inputJar, Path sliceFile, Path outputJar, String entry)
+      throws IOException {
     byte[] sliceBytes = Files.readAllBytes(sliceFile);
     Path dir = outputJar.toAbsolutePath().getParent();
     Path tmp = Files.createTempFile(dir, outputJar.getFileName().toString(), ".tmp");
     try {
-      rewriteJarWithSlice(inputJar, sliceBytes, tmp);
+      rewriteJarWithSlice(inputJar, sliceBytes, tmp, entry);
       try {
         Files.move(tmp, outputJar, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       } catch (AtomicMoveNotSupportedException e) {
@@ -47,26 +53,26 @@ public final class InjectSlice {
     }
   }
 
-  private static void rewriteJarWithSlice(Path inputJar, byte[] sliceBytes, Path outputJar)
-      throws IOException {
+  private static void rewriteJarWithSlice(
+      Path inputJar, byte[] sliceBytes, Path outputJar, String entry) throws IOException {
     try (ZipFile in = new ZipFile(inputJar.toFile());
         ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(outputJar))) {
-      if (in.getEntry(SLICE_ENTRY) != null) {
-        throw new IllegalStateException("slice entry already present: " + SLICE_ENTRY);
+      if (in.getEntry(entry) != null) {
+        throw new IllegalStateException("slice entry already present: " + entry);
       }
       java.util.Enumeration<? extends ZipEntry> entries = in.entries();
       while (entries.hasMoreElements()) {
-        ZipEntry entry = entries.nextElement();
-        ZipEntry copy = new ZipEntry(entry);
+        ZipEntry copyEntry = entries.nextElement();
+        ZipEntry copy = new ZipEntry(copyEntry);
         out.putNextEntry(copy);
-        if (!entry.isDirectory()) {
-          try (java.io.InputStream content = in.getInputStream(entry)) {
+        if (!copyEntry.isDirectory()) {
+          try (java.io.InputStream content = in.getInputStream(copyEntry)) {
             content.transferTo(out);
           }
         }
         out.closeEntry();
       }
-      ZipEntry slice = new ZipEntry(SLICE_ENTRY);
+      ZipEntry slice = new ZipEntry(entry);
       slice.setMethod(ZipEntry.STORED);
       CRC32 crc = new CRC32();
       crc.update(sliceBytes);

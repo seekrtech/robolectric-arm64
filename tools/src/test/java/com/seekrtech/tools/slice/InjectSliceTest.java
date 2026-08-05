@@ -55,6 +55,25 @@ class InjectSliceTest {
   }
 
   @Test
+  void inject_customEntry_addsSliceAtGivenEntry() throws Exception {
+    Path input = smallJar("org/conscrypt/NativeCrypto.class");
+    Path slice = tempDir.resolve("libconscrypt_openjdk_jni-linux-aarch_64.so");
+    byte[] soBytes = new byte[] {0x7f, 'E', 'L', 'F', 9, 9, 9, 9};
+    Files.write(slice, soBytes);
+    Path output = tempDir.resolve("conscrypt-arm64.jar");
+    String entry = "META-INF/native/libconscrypt_openjdk_jni-linux-aarch_64.so";
+
+    InjectSlice.inject(input, slice, output, entry);
+
+    try (JarFile result = new JarFile(output.toFile())) {
+      JarEntry injected = result.getJarEntry(entry);
+      assertTrue(injected != null, "slice entry missing: " + entry);
+      assertEquals(JarEntry.STORED, injected.getMethod(), "native lib must be STORED");
+      assertArrayEquals(soBytes, result.getInputStream(injected).readAllBytes());
+    }
+  }
+
+  @Test
   void inject_preservesExistingEntriesByteIdentical() throws Exception {
     Path input = smallJar("org/robolectric/Example.class", "META-INF/MANIFEST.MF");
     Path slice = tempDir.resolve("librobolectric-nativeruntime.so");

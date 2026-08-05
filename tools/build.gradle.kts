@@ -28,6 +28,11 @@ tasks.register<JavaExec>("runResolveDistCompat") {
     mainClass.set("com.seekrtech.tools.distcompat.ResolveDistCompatVersion")
 }
 
+tasks.register<JavaExec>("runResolveConscrypt") {
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.seekrtech.tools.conscrypt.ResolveConscryptVersion")
+}
+
 tasks.register<JavaExec>("runNextCandidate") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.seekrtech.tools.candidate.NextCandidate")
