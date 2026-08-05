@@ -2,7 +2,5 @@
   "published": [
     "4.14.1"
   ],
-  "blocked": [
-    "4.14.1"
-  ]
+  "blocked": []
 }
