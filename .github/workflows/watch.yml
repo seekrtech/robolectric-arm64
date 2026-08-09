@@ -37,4 +37,8 @@ jobs:
         if: steps.candidate.outputs.candidate != ''
         env:
           CANDIDATE: ${{ steps.candidate.outputs.candidate }}
+          # gh refuses to run in Actions without this. workflow_dispatch is one of the two
+          # events GitHub exempts from "GITHUB_TOKEN does not trigger workflows", so the
+          # built-in token is enough given the actions:write permission above.
+          GH_TOKEN: ${{ github.token }}
         run: gh workflow run publish.yml -f robolectric_version="$CANDIDATE"
